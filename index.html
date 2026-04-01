@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Solidus" />
   <title>Solidus — Production Cost System</title>
-  <link rel="manifest" href="/manifest.json" />
+<link rel="manifest" href="/solidus-cost-calculator/manifest.json" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -143,7 +143,7 @@
     }
 
     /* INPUTS */
-    .input, .select, .textarea {
+    .input, .select, .textarea 
       width: 100%;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -1567,7 +1567,7 @@ ReactDOM.createRoot(document.getElementById('app')).render(<App />);
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+   navigator.serviceWorker.register('/solidus-cost-calculator/sw.js')
     });
   }
 </script>
