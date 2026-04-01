@@ -1,6 +1,11 @@
-const CACHE = "solidus-v4";
+const CACHE = "solidus-v6";
 const ASSETS = [
-  "/",
+const ASSETS = [
+  "/solidus-cost-calculator/",
+  "/solidus-cost-calculator/index.html",
+  "/solidus-cost-calculator/manifest.json",
+  "/solidus-cost-calculator/icon-192.png",
+  "/solidus-cost-calculator/icon-512.png"
   "/index.html",
   "/manifest.json",
   "/icon-192.png",
