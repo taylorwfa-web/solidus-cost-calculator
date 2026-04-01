@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#e63946" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Solidus" />
+  <title>Solidus — Production Cost System</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: #2a2a2a;
+      --border2: #333333;
+      --red: #e63946;
+      --gold: #c9a84c;
+      --text: #e0e0e0;
+      --text2: #999999;
+      --text3: #555555;
+      --mono: 'IBM Plex Mono', 'Courier New', monospace;
+      --sans: 'IBM Plex Sans', system-ui, sans-serif;
+      --green: #4caf50;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    select option { background: #111; color: var(--text); }
+
+    /* LAYOUT */
+    #app { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    .header {
+      background: #0d0d0d;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-brand { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      background: var(--red);
+      color: #fff;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 4px 10px;
+    }
+    .header-sub { color: var(--text3); font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; display: none; }
+    @media(min-width:600px){ .header-sub { display: block; } }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      background: #0d0d0d;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1;
+      padding: 14px 8px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+    .tab.active { color: var(--red); border-bottom-color: var(--red); }
+    .tab.quote-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab:hover:not(.active) { color: var(--text2); }
+
+    /* CONTENT */
+    .content { flex: 1; padding: 0 0 100px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* SECTION */
+    .section {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    @media(min-width:700px){ .section { padding: 0 24px; } }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 28px 0 16px;
+    }
+    .section-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+    .section-label.gold { color: var(--gold); }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* FIELD */
+    .field { margin-bottom: 20px; }
+    .field-label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+    .field-hint {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    /* INPUTS */
+    .input, .select, .textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: var(--sans);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--border2); }
+    .input.mono, .select.mono { font-family: var(--mono); }
+    .input.gold-border:focus { border-color: var(--gold); }
+    .select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+    .textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    @media(max-width:400px){ .grid-2 { grid-template-columns: 1fr; } }
+
+    /* FILAMENT CARD */
+    .filament-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .filament-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .filament-title { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--red); }
+    .wear-badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--text3);
+      background: var(--surface2);
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+    .btn-remove {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 4px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+    .btn-remove:hover { border-color: var(--red); color: var(--red); }
+    .filament-cost-row {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      text-align: right;
+      margin-top: -8px;
+      margin-bottom: 12px;
+    }
+    .filament-cost-row span { color: var(--text2); }
+
+    /* ADD BUTTON */
+    .btn-add {
+      width: 100%;
+      padding: 14px;
+      background: none;
+      border: 1px dashed var(--border2);
+      color: var(--text3);
+      font-size: 12px;
+      font-family: var(--mono);
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      transition: all 0.15s;
+    }
+    .btn-add:hover { border-color: var(--red); color: var(--red); }
+
+    /* CHECKBOX */
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 14px;
+      margin-bottom: 16px;
+      user-select: none;
+    }
+    .check-box {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      accent-color: var(--red);
+    }
+    .check-box.gold { accent-color: var(--gold); }
+    .check-sub { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* COST SUMMARY */
+    .cost-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--red);
+      border-radius: 0 0 8px 8px;
+      margin-bottom: 24px;
+    }
+    .cost-summary.gold-top { border-top-color: var(--gold); }
+    .summary-title {
+      padding: 16px 20px 12px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      color: var(--red);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-title.gold { color: var(--gold); }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row-label { color: var(--text2); font-size: 13px; line-height: 1.4; }
+    .summary-row-sub { color: var(--text3); font-size: 11px; font-family: var(--mono); margin-top: 2px; }
+    .summary-row-value { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .summary-row-value.red { color: var(--red); }
+    .summary-row-value.gold { color: var(--gold); }
+    .summary-row-value.green { color: var(--green); }
+    .summary-row-value.dim { color: var(--text3); }
+
+    /* TOTAL BOX */
+    .total-box {
+      background: #0d0d0d;
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--red);
+      border-radius: 8px;
+      padding: 24px 20px;
+      margin-bottom: 24px;
+    }
+    .total-box.gold { border-top-color: var(--gold); }
+    .total-box-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .total-box-sublabel { font-size: 11px; color: var(--text3); margin-top: 4px; }
+    .total-box-amount {
+      font-family: var(--mono);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--red);
+      line-height: 1;
+    }
+    .total-box-amount.gold { color: var(--gold); }
+    .total-box-row { display: flex; justify-content: space-between; align-items: flex-end; }
+    .total-box-per { font-family: var(--mono); font-size: 13px; color: var(--text3); margin-top: 6px; }
+    .total-box-per span { color: var(--text2); }
+
+    /* MARKUP GRID */
+    .markup-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .markup-btn {
+      padding: 10px 14px;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 5px;
+      min-width: 52px;
+      text-align: center;
+      transition: all 0.1s;
+    }
+    .markup-btn.active { border: 2px solid var(--gold); background: #1a1500; color: var(--gold); font-weight: 700; }
+
+    /* RISK GRID */
+    .risk-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-bottom: 16px; }
+    .risk-btn {
+      padding: 14px 4px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text3);
+      font-family: var(--mono);
+      cursor: pointer;
+      border-radius: 5px;
+      text-align: center;
+      transition: all 0.1s;
+    }
+    .risk-btn.active { border: 2px solid var(--gold); background: #1a1500; color: var(--gold); }
+    .risk-btn-num { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+    .risk-btn-label { font-size: 8px; letter-spacing: 1px; }
+    .risk-info {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--gold);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .risk-info-title { font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px; color: var(--text3); margin-bottom: 4px; }
+    .risk-info-text { font-size: 13px; color: var(--text2); margin-bottom: 10px; line-height: 1.4; }
+    .risk-info-buffer { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--gold); }
+
+    /* TIER LABELS */
+    .tier-labels { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; margin-bottom: 20px; }
+    .tier-label {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.5px;
+      text-align: center;
+      color: var(--text3);
+      padding: 4px 2px;
+      border-top: 1px solid var(--border);
+    }
+    .tier-label.active { color: var(--gold); border-top-color: var(--gold); }
+
+    /* BULK TIERS */
+    .bulk-tiers { margin-bottom: 16px; }
+    .bulk-tier-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+    .bulk-tier-row.active { background: var(--surface2); border-color: var(--red); }
+    .bulk-tier-row.active .bulk-tier-name { color: var(--text); }
+    .bulk-tier-row.active .bulk-tier-pct { color: var(--red); }
+    .bulk-tier-name { color: var(--text3); }
+    .bulk-tier-pct { color: var(--text3); font-weight: 700; }
+
+    /* ACTION BUTTONS */
+    .btn-row { display: flex; gap: 10px; margin-bottom: 8px; }
+    .btn {
+      flex: 1;
+      padding: 14px 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--mono);
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-red { background: var(--red); color: #fff; }
+    .btn-gold { background: var(--gold); color: #111; }
+    .btn-dark { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+    .btn-ghost { background: none; border: 1px solid var(--border2); color: var(--text3); }
+
+    /* DIVIDER */
+    .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+    /* INLINE INFO */
+    .info-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--border2);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+    .info-box.red { border-left-color: var(--red); }
+    .info-box.gold { border-left-color: var(--gold); }
+
+    /* PROFIT CARD */
+    .profit-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .profit-label { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; }
+    .profit-sub { font-size: 11px; color: var(--text3); }
+    .profit-amount { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+    .profit-margin { font-family: var(--mono); font-size: 11px; color: var(--text3); text-align: right; margin-top: 2px; }
+
+    /* DOCS */
+    .docs-row { display: flex; gap: 10px; margin-bottom: 8px; }
+    .doc-link {
+      flex: 1;
+      display: block;
+      padding: 14px 10px;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--mono);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-decoration: none;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .doc-link:hover { border-color: var(--red); color: var(--red); }
+
+    /* RESET */
+    .btn-reset {
+      width: 100%;
+      padding: 12px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text3);
+      font-size: 10px;
+      font-family: var(--mono);
+      letter-spacing: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      margin-top: 8px;
+      transition: border-color 0.15s;
+    }
+    .btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+    /* CUSTOMISATION ITEM */
+    .custom-sub {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: -8px;
+      margin-bottom: 16px;
+    }
+
+    /* BADGE */
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .badge-red { background: rgba(230,57,70,0.15); color: var(--red); }
+    .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+
+    /* VAT TOGGLE */
+    .vat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .vat-label { font-size: 14px; color: var(--text2); }
+    .vat-sub { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border2);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--gold); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const KWH = 4.09;
+const MACHINES = {
+  k1c: { label: 'K1C — Standard', watts: 350, rate: (350/1000)*KWH },
+  k2:  { label: 'K2 Plus — Engineering/CF', watts: 500, rate: (500/1000)*KWH },
+};
+const WS_RATE  = (400/1000)*KWH;
+const DRY_RATE = (360/1000)*KWH;
+const WEAR = {
+  1: { label: 'Class 1 — Standard',   nozzle: 0.015, pei: 0.80 },
+  2: { label: 'Class 2 — Additive',   nozzle: 0.030, pei: 0.90 },
+  3: { label: 'Class 3 — CF/GF Abrasive', nozzle: 0.100, pei: 1.20 },
+};
+const BULK_TIERS = [
+  { min:1,  max:9,    pct:0,  label:'1–9 units'   },
+  { min:10, max:24,   pct:5,  label:'10–24 units'  },
+  { min:25, max:49,   pct:10, label:'25–49 units'  },
+  { min:50, max:9999, pct:15, label:'50+ units'    },
+];
+const MARKUP_OPTS = [1.0,1.5,2.0,2.2,2.5,2.8,3.0,3.2,3.5,3.8,4.0,4.2,4.5,5.0,5.5,6.0];
+const MARKUP_TIERS = [
+  { label:'Cost Recovery', min:1.0, max:1.5 },
+  { label:'Entry / Volume', min:2.0, max:2.5 },
+  { label:'Engineering', min:2.8, max:3.8 },
+  { label:'Industrial', min:4.0, max:6.0 },
+];
+const RISK_LEVELS = [
+  { level:1, label:'LOW',     buf:0,    desc:'Standard materials, very stable',            strat:'No buffer needed' },
+  { level:2, label:'MED',     buf:2.5,  desc:'Low instability, minor env control',         strat:'Small contingency recommended' },
+  { level:3, label:'HIGH',    buf:7.5,  desc:'Controlled env required — drying/enclosure', strat:'Add 5–10% buffer' },
+  { level:4, label:'EXTREME', buf:15,   desc:'High skill, expensive scrap risk',           strat:'Add 10–20% buffer' },
+  { level:5, label:'CRIT',    buf:22.5, desc:'Mission-critical, exotic materials',         strat:'Full process qualification' },
+];
+const FINISH = {
+  as_printed: { label:'As Printed',        mins:0  },
+  cleaned:    { label:'Cleaned',            mins:15 },
+  smoothed:   { label:'Smoothed',           mins:45 },
+  polished:   { label:'Polished (ABS only)',mins:90 },
+};
+const CAD_RATE = 150;
+const OPS_RATE = 180;
+const FIN_RATE = 180/60;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+let _id = 0;
+const uid = () => ++_id;
+const newFilament = () => ({ id:uid(), label:'', spoolCost:'', spoolWeight:1000, grams:'' });
+const toHrs = (h, m) => (parseFloat(h)||0) + (parseFloat(m)||0)/60;
+const fmt = v => `R${(v||0).toFixed(2)}`;
+const detectWear = label => {
+  const l = (label||'').toLowerCase();
+  if (/cf|gf|carbon|glass|fiber|fibre|reinforced/.test(l)) return 3;
+  if (/esd|fr-abs|fr abs|flame/.test(l)) return 2;
+  return 1;
+};
+const suggestTier = qty => BULK_TIERS.find(t => qty >= t.min && qty <= t.max) || BULK_TIERS[0];
+const getMuxTier = m => MARKUP_TIERS.find(t => m >= t.min && m <= t.max) || MARKUP_TIERS[1];
+
+// ─── SMALL COMPONENTS ────────────────────────────────────────────────────────
+const SectionHead = ({label, gold}) => (
+  <div className="section-header">
+    <span className={`section-label${gold?' gold':''}`}>{label}</span>
+    <div className="section-line" />
+  </div>
+);
+
+const Field = ({label, hint, children}) => (
+  <div className="field">
+    {label && <label className="field-label">{label}</label>}
+    {hint  && <div className="field-hint">{hint}</div>}
+    {children}
+  </div>
+);
+
+const HM = ({hVal,hSet,mVal,mSet,gold}) => (
+  <div className="grid-2">
+    <div>
+      <label className="field-label">Hours</label>
+      <input className={`input mono${gold?' gold-border':''}`} type="number" inputMode="decimal" value={hVal} onChange={e=>hSet(e.target.value)} placeholder="0" min="0" />
+    </div>
+    <div>
+      <label className="field-label">Minutes</label>
+      <input className={`input mono${gold?' gold-border':''}`} type="number" inputMode="decimal" value={mVal} onChange={e=>mSet(e.target.value)} placeholder="0" min="0" max="59" />
+    </div>
+  </div>
+);
+
+const SummaryRow = ({label, sub, value, dim, red, gold, green}) => (
+  <div className="summary-row">
+    <div>
+      <div className="summary-row-label">{label}</div>
+      {sub && <div className="summary-row-sub">{sub}</div>}
+    </div>
+    <div className={`summary-row-value${red?' red':gold?' gold':green?' green':dim?' dim':''}`}>{value}</div>
+  </div>
+);
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState('cost');
+
+  // ── Shared job info
+  const [clientName, setClientName] = useState('');
+  const [jobDesc,    setJobDesc]    = useState('');
+  const [jobDate,    setJobDate]    = useState(new Date().toISOString().slice(0,10));
+
+  // ── Cost tab state
+  const [filaments,    setFilaments]    = useState([newFilament()]);
+  const [machine,      setMachine]      = useState('k1c');
+  const [printH,       setPrintH]       = useState('');
+  const [printM,       setPrintM]       = useState('');
+  const [dryEnabled,   setDryEnabled]   = useState(false);
+  const [dryH,         setDryH]         = useState('');
+  const [otherCost,    setOtherCost]    = useState('');
+  const [bulkEnabled,  setBulkEnabled]  = useState(false);
+  const [bulkQty,      setBulkQty]      = useState('');
+  const [bulkDiscount, setBulkDiscount] = useState('');
+
+  // ── Quote tab state
+  const [markup,       setMarkup]       = useState(2.5);
+  const [risk,         setRisk]         = useState(1);
+  const [urgent,       setUrgent]       = useState(false);
+  const [finish,       setFinish]       = useState('cleaned');
+  const [cadH,         setCadH]         = useState('');
+  const [cadM,         setCadM]         = useState('');
+  const [opsH,         setOpsH]         = useState('');
+  const [opsM,         setOpsM]         = useState('');
+  const [custText,     setCustText]     = useState(false);
+  const [custTextH,    setCustTextH]    = useState('');
+  const [custTextM,    setCustTextM]    = useState('');
+  const [custLogo,     setCustLogo]     = useState(false);
+  const [custLogoH,    setCustLogoH]    = useState('');
+  const [custLogoM,    setCustLogoM]    = useState('');
+  const [colourMatch,  setColourMatch]  = useState(false);
+  const [cmSpoolCost,  setCmSpoolCost]  = useState('');
+  const [cmSpoolWt,    setCmSpoolWt]    = useState(1000);
+  const [cmGrams,      setCmGrams]      = useState('');
+  const [cmPrintH,     setCmPrintH]     = useState('');
+  const [cmPrintM,     setCmPrintM]     = useState('');
+  const [delivery,     setDelivery]     = useState('');
+  const [vatEnabled,   setVatEnabled]   = useState(false);
+  const [quoteRef,     setQuoteRef]     = useState('');
+  const [quoteExpiry,  setQuoteExpiry]  = useState(7);
+  const [quoteNotes,   setQuoteNotes]   = useState('');
+
+  // ── COST CALCULATIONS ───────────────────────────────────────────────────────
+  const printHrs = toHrs(printH, printM);
+  const qty      = parseInt(bulkQty) || 1;
+
+  const filamentData = filaments.map(f => {
+    const cpg   = (f.spoolCost && f.spoolWeight) ? parseFloat(f.spoolCost)/parseFloat(f.spoolWeight) : 0;
+    const grams = parseFloat(f.grams) || 0;
+    const wc    = detectWear(f.label);
+    return { ...f, cpg, cost: cpg*grams, grams, wc };
+  });
+
+  const totalMaterial  = filamentData.reduce((s,f) => s+f.cost, 0);
+  const nozzleWear     = filamentData.reduce((s,f) => s + f.grams*WEAR[f.wc].nozzle, 0);
+  const highestWC      = Math.max(...filamentData.map(f=>f.wc), 1);
+  const peiWear        = printHrs * WEAR[highestWC].pei;
+  const machineElec    = MACHINES[machine].rate * printHrs;
+  const wsElec         = WS_RATE * printHrs;
+  const dryerElec      = dryEnabled ? DRY_RATE*(parseFloat(dryH)||0) : 0;
+  const otherCostVal   = parseFloat(otherCost) || 0;
+
+  const perUnitCost    = totalMaterial + machineElec + wsElec + nozzleWear + peiWear + otherCostVal;
+  const oneTimeCost    = dryerElec;
+
+  const tier           = suggestTier(qty);
+  const discPct        = bulkEnabled ? (bulkDiscount !== '' ? parseFloat(bulkDiscount) : tier.pct) : 0;
+  const discAmt        = bulkEnabled ? (perUnitCost*qty)*(discPct/100) : 0;
+  const totalRun       = bulkEnabled ? (perUnitCost*qty) - discAmt + oneTimeCost : perUnitCost + oneTimeCost;
+  const costPerUnit    = bulkEnabled && qty>1 ? totalRun/qty : perUnitCost + oneTimeCost;
+  const displayTotal   = totalRun;
+
+  // ── QUOTE CALCULATIONS ──────────────────────────────────────────────────────
+  const cmCpg       = (cmSpoolCost && cmSpoolWt) ? parseFloat(cmSpoolCost)/parseFloat(cmSpoolWt) : 0;
+  const cmPrintHrs  = toHrs(cmPrintH, cmPrintM);
+  const cmCost      = colourMatch ? cmCpg*(parseFloat(cmGrams)||0) + (MACHINES[machine].rate+WS_RATE)*cmPrintHrs : 0;
+
+  const urgentAmt   = urgent ? displayTotal*0.5 : 0;
+  const prodBase    = displayTotal + urgentAmt;
+  const quotedBase  = prodBase * markup;
+  const riskInfo    = RISK_LEVELS[risk-1];
+  const riskAmt     = quotedBase * (riskInfo.buf/100);
+
+  const finLabour   = FINISH[finish].mins * FIN_RATE;
+  const cadLabour   = toHrs(cadH,cadM) * CAD_RATE;
+  const opsLabour   = toHrs(opsH,opsM) * OPS_RATE;
+  const ctLabour    = custText ? toHrs(custTextH,custTextM)*CAD_RATE : 0;
+  const clLabour    = custLogo ? toHrs(custLogoH,custLogoM)*CAD_RATE : 0;
+  const totalLabour = finLabour + cadLabour + opsLabour + ctLabour + clLabour;
+
+  const deliveryVal = parseFloat(delivery) || 0;
+  const finalPrice  = quotedBase + riskAmt + cmCost + totalLabour + deliveryVal;
+  const pricePerUnit= bulkEnabled && qty>1 ? finalPrice/qty : finalPrice;
+  const vatAmt      = vatEnabled ? finalPrice*0.15 : 0;
+  const totalWithVat= finalPrice + vatAmt;
+
+  const profit      = finalPrice - displayTotal - totalLabour - cmCost;
+  const marginPct   = displayTotal > 0 ? ((profit/displayTotal)*100).toFixed(1) : '--';
+
+  const autoRef     = 'SLD-'+(jobDate||'').replace(/-/g,'').slice(2)+'-'+(clientName||'Q').slice(0,3).toUpperCase();
+  const finalRef    = quoteRef.trim() || autoRef;
+
+  // ── FILAMENT HELPERS ────────────────────────────────────────────────────────
+  const addFilament    = () => setFilaments(f => [...f, newFilament()]);
+  const removeFilament = id => setFilaments(f => f.filter(x => x.id!==id));
+  const updateFilament = (id,k,v) => setFilaments(f => f.map(x => x.id===id ? {...x,[k]:v} : x));
+
+  // ── PDF LOADER ───────────────────────────────────────────────────────────────
+  const loadPDF = fn => {
+    if (window.jspdf) { fn(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = () => setTimeout(fn, 100);
+    s.onerror = () => alert('PDF library failed to load.');
+    document.head.appendChild(s);
+  };
+
+  // ── PDF: COST SHEET ──────────────────────────────────────────────────────────
+  const genCostSheet = () => {
+    if (!window.jspdf) { alert('PDF not loaded.'); return; }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210, M=18; let y=0;
+
+    // Header
+    doc.setFillColor(13,13,13); doc.rect(0,0,W,32,'F');
+    doc.setFillColor(230,57,70); doc.rect(0,32,W,1.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(255,255,255);
+    doc.text('SOLIDUS',M,16);
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(120,120,120);
+    doc.text('PRODUCTION COST SHEET  ·  CODEX REV 3.1  ·  R'+KWH+'/kWh',M+42,16);
+    doc.setFillColor(40,40,40); doc.roundedRect(W-M-44,8,44,16,2,2,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(180,180,180);
+    doc.text('COST SHEET',W-M-22,18,{align:'center'});
+    y=42;
+
+    // Job info
+    doc.setFillColor(245,245,245); doc.roundedRect(M,y,W-M*2,32,2,2,'F');
+    doc.setDrawColor(220,220,220); doc.roundedRect(M,y,W-M*2,32,2,2,'S');
+    [['CLIENT',clientName||'—'],['JOB',jobDesc||'—'],['DATE',jobDate||'—']].forEach(([l,v],i)=>{
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(180,60,70); doc.text(l,M+5,y+9+i*8);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30); doc.text(String(v),M+24,y+9+i*8);
+    });
+    y+=40;
+
+    const sec=(title)=>{
+      doc.setFillColor(230,57,70); doc.rect(M,y,W-M*2,8,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
+      doc.text(title,M+4,y+5.5); return y+11;
+    };
+    const row=(label,sub,value,shade)=>{
+      const rH=sub?14:10;
+      if(shade){doc.setFillColor(249,249,249);doc.rect(M,y,W-M*2,rH,'F');}
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(40,40,40);doc.text(label,M+4,y+6);
+      if(sub){doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(150,150,150);doc.text(sub,M+4,y+11);}
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(30,30,30);doc.text(value,W-M-4,y+6,{align:'right'});
+      doc.setDrawColor(235,235,235);doc.line(M,y+rH,W-M,y+rH);
+      y+=rH+1;
+    };
+
+    y=sec('MATERIAL'+(filaments.length>1?' ('+filaments.length+' FILAMENTS)':'')); let sh=false;
+    filamentData.forEach((f,i)=>{row(f.label||'Filament '+(i+1),f.grams+'g @ R'+f.cpg.toFixed(4)+'/g · '+WEAR[f.wc].label,fmt(f.cost),sh);sh=!sh;});
+    if(filaments.length>1){row('TOTAL MATERIAL','',fmt(totalMaterial),false);}
+    y+=3;
+
+    y=sec('ELECTRICITY'); sh=false;
+    row(MACHINES[machine].label,printHrs.toFixed(2)+'h × R'+MACHINES[machine].rate.toFixed(2)+'/hr',fmt(machineElec),sh);sh=!sh;
+    row('Workstation (400W)',printHrs.toFixed(2)+'h × R'+WS_RATE.toFixed(2)+'/hr',fmt(wsElec),sh);sh=!sh;
+    if(dryEnabled){row('Dryer — SpacePi X4 [one-time]',(parseFloat(dryH)||0)+'h × R'+DRY_RATE.toFixed(2)+'/hr',fmt(dryerElec),sh);}
+    y+=3;
+
+    y=sec('CONSUMABLES (AUTO-CALCULATED)'); sh=false;
+    row('Nozzle Wear','Material class: '+filamentData.map(f=>WEAR[f.wc].label).join(', '),fmt(nozzleWear),sh);sh=!sh;
+    row('PEI Plate Wear',printHrs.toFixed(2)+'h × R'+WEAR[highestWC].pei+'/hr ('+WEAR[highestWC].label+')',fmt(peiWear),sh);
+    if(otherCostVal>0){sh=!sh;row('Other Costs','Per unit',fmt(otherCostVal),sh);}
+    y+=3;
+
+    if(bulkEnabled&&qty>1){
+      y=sec('BULK ORDER — '+qty+' UNITS'); sh=false;
+      row('Per-unit × '+qty,'',fmt(perUnitCost*qty),sh);sh=!sh;
+      if(oneTimeCost>0)row('One-Time Costs','Dryer (not multiplied)',fmt(oneTimeCost),sh);
+      if(discAmt>0){sh=!sh;row('Bulk Discount '+discPct+'%','Per-unit costs only','-'+fmt(discAmt),sh);}
+      y+=3;
+    }
+
+    // Total
+    doc.setFillColor(13,13,13); doc.roundedRect(M,y,W-M*2,24,2,2,'F');
+    doc.setFillColor(230,57,70); doc.rect(M,y,2,24,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(180,180,180);
+    doc.text('TOTAL PRODUCTION COST — HARD COSTS ONLY',M+7,y+9);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(80,80,80);
+    doc.text('No labour included · Codex Rev 3.1',M+7,y+17);
+    doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(230,57,70);
+    doc.text(fmt(displayTotal),W-M-4,y+16,{align:'right'});
+    y+=32;
+    if(bulkEnabled&&qty>1){
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);
+      doc.text('Cost per unit: '+fmt(costPerUnit),W-M-4,y,{align:'right'});y+=8;
+    }
+
+    doc.setDrawColor(220,220,220);doc.line(M,y,W-M,y);y+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(160,160,160);
+    doc.text('Solidus · Cost Sheet · '+finalRef+' · '+new Date().toLocaleString(),M,y);
+    const sn=(clientName||'job').replace(/[^a-zA-Z0-9]/g,'_');
+    doc.save('Solidus_CostSheet_'+sn+'_'+(jobDate||'today')+'.pdf');
+  };
+
+  // ── PDF: CUSTOMER QUOTE ──────────────────────────────────────────────────────
+  const genCustomerQuote = () => {
+    if (!window.jspdf) { alert('PDF not loaded.'); return; }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210, M=18; let y=0; const G=[201,168,76];
+
+    doc.setFillColor(13,13,13);doc.rect(0,0,W,32,'F');
+    doc.setFillColor(...G);doc.rect(0,32,W,1.5,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(255,255,255);doc.text('SOLIDUS',M,16);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(140,140,140);doc.text('FDM MANUFACTURING & PRODUCTION SERVICES',M,24);
+    doc.setFillColor(...G);doc.roundedRect(W-M-48,8,48,16,2,2,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(20,20,20);doc.text('QUOTATION',W-M-24,18,{align:'center'});
+    y=42;
+
+    // Ref bar
+    doc.setFillColor(245,245,245);doc.rect(M,y,W-M*2,14,'F');
+    doc.setDrawColor(220,220,220);doc.rect(M,y,W-M*2,14,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...G);
+    doc.text('QUOTE REF',M+5,y+6);doc.text('DATE ISSUED',M+70,y+6);doc.text('VALID UNTIL',M+135,y+6);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(30,30,30);
+    doc.text(finalRef,M+5,y+12);
+    doc.text(jobDate||new Date().toISOString().slice(0,10),M+70,y+12);
+    const vd=new Date(jobDate||new Date());vd.setDate(vd.getDate()+quoteExpiry);
+    doc.text(vd.toISOString().slice(0,10),M+135,y+12);
+    y+=22;
+
+    // Client
+    doc.setFillColor(250,250,250);doc.roundedRect(M,y,W-M*2,26,2,2,'F');
+    doc.setDrawColor(230,230,230);doc.roundedRect(M,y,W-M*2,26,2,2,'S');
+    doc.setFillColor(...G);doc.rect(M,y,2,26,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...G);doc.text('PREPARED FOR',M+6,y+8);
+    doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(30,30,30);doc.text(clientName||'—',M+6,y+18);
+    if(jobDesc){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,100,100);doc.text('Re: '+jobDesc,M+6,y+24);}
+    y+=34;
+
+    // Scope
+    doc.setFillColor(13,13,13);doc.rect(M,y,W-M*2,9,'F');doc.setFillColor(...G);doc.rect(M,y,2,9,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,255,255);doc.text('SCOPE OF WORK',M+6,y+6.2);y+=13;
+    const scopeRows=[
+      ['Material',filaments.map((f,i)=>f.label||'Filament '+(i+1)).join(', ')||'—'],
+      ['Machine',MACHINES[machine].label],
+      ['Surface Finish',FINISH[finish].label],
+    ];
+    if(bulkEnabled&&qty>1)scopeRows.push(['Quantity',qty+' units']);
+    if(urgent)scopeRows.push(['Turnaround','URGENT — P1 Priority']);
+    const ci=[];
+    if(custText)ci.push('Custom text/naming');
+    if(custLogo)ci.push('Logo/artwork');
+    if(colourMatch)ci.push('Colour matching');
+    if(ci.length)scopeRows.push(['Customisation',ci.join(', ')]);
+    if(dryEnabled)scopeRows.push(['Material Prep','Pre-print drying protocol']);
+    scopeRows.forEach(([l,v],i)=>{
+      if(i%2===1){doc.setFillColor(248,248,248);doc.rect(M,y,W-M*2,11,'F');}
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(110,110,110);doc.text(l,M+5,y+7.5);
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(30,30,30);doc.text(String(v),M+58,y+7.5);
+      doc.setDrawColor(235,235,235);doc.line(M,y+11,W-M,y+11);y+=12;
+    });
+    y+=10;
+
+    // Price box
+    doc.setFillColor(13,13,13);doc.roundedRect(M,y,W-M*2,vatEnabled?52:38,3,3,'F');
+    doc.setFillColor(...G);doc.rect(M,y,3,vatEnabled?52:38,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(160,160,160);
+
+    if(vatEnabled){
+      doc.text('SUBTOTAL (EXCL. VAT)',M+9,y+10);
+      doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(...G);
+      doc.text(fmt(finalPrice),W-M-5,y+16,{align:'right'});
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);
+      doc.text('VAT (15%)',M+9,y+27);doc.text(fmt(vatAmt),W-M-5,y+27,{align:'right'});
+      doc.setDrawColor(60,60,60);doc.line(M+9,y+31,W-M-5,y+31);
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(200,200,200);
+      doc.text(bulkEnabled&&qty>1?'TOTAL — '+qty+' UNITS':'TOTAL (INCL. VAT)',M+9,y+39);
+      doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(...G);
+      doc.text(fmt(totalWithVat),W-M-5,y+46,{align:'right'});
+    } else {
+      doc.text(bulkEnabled&&qty>1?'TOTAL QUOTED PRICE — '+qty+' UNITS':'TOTAL QUOTED PRICE',M+9,y+11);
+      doc.setFont('helvetica','bold');doc.setFontSize(26);doc.setTextColor(...G);
+      doc.text(fmt(finalPrice),W-M-5,y+26,{align:'right'});
+    }
+    if(bulkEnabled&&qty>1){
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);
+      doc.text(fmt(vatEnabled?totalWithVat/qty:pricePerUnit)+' per unit',W-M-5,y+(vatEnabled?52:38)+2,{align:'right'});
+      y+=(vatEnabled?52:38)+10;
+    } else { y+=(vatEnabled?52:38)+10; }
+
+    // Terms
+    doc.setFillColor(245,245,245);doc.roundedRect(M,y,W-M*2,36,2,2,'F');
+    doc.setDrawColor(220,220,220);doc.roundedRect(M,y,W-M*2,36,2,2,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...G);doc.text('PAYMENT & TERMS',M+5,y+8);
+    const terms=[
+      (bulkEnabled||urgent)?'50% deposit required before production commences.':'Payment due on collection or delivery.',
+      'Balance due on collection or delivery of completed parts.',
+      'EFT preferred. Quote valid for '+quoteExpiry+' days from date of issue.',
+      'Subject to Solidus Manufacturing Terms & Conditions.',
+    ];
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(60,60,60);
+    terms.forEach((t,i)=>doc.text('• '+t,M+5,y+16+i*5.5));
+    y+=44;
+
+    doc.setDrawColor(210,210,210);doc.line(M,y,W-M,y);y+=5;
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(160,160,160);
+    doc.text('Solidus · '+finalRef+' · '+new Date().toLocaleString(),M,y);
+    doc.text('This quotation does not constitute a tax invoice.',W-M,y,{align:'right'});
+    const sn=(clientName||'client').replace(/[^a-zA-Z0-9]/g,'_');
+    doc.save('Solidus_Quote_'+sn+'_'+(jobDate||'today')+'.pdf');
+  };
+
+  // ── PDF: INTERNAL QUOTE ──────────────────────────────────────────────────────
+  const genInternalQuote = () => {
+    if (!window.jspdf) { alert('PDF not loaded.'); return; }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210, M=18; let y=0;
+
+    doc.setFillColor(13,13,13);doc.rect(0,0,W,32,'F');
+    doc.setFillColor(230,57,70);doc.rect(0,32,W,1.5,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(255,255,255);doc.text('SOLIDUS',M,16);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(140,140,140);doc.text('INTERNAL QUOTE — CONFIDENTIAL',M,24);
+    doc.setFillColor(40,40,40);doc.roundedRect(W-M-52,8,52,16,2,2,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(180,180,180);doc.text('INTERNAL COPY',W-M-26,18,{align:'center'});
+    y=42;
+
+    doc.setFillColor(245,245,245);doc.roundedRect(M,y,W-M*2,32,2,2,'F');
+    doc.setDrawColor(220,220,220);doc.roundedRect(M,y,W-M*2,32,2,2,'S');
+    [['CLIENT',clientName||'—'],['JOB',jobDesc||'—'],['DATE',jobDate||'—']].forEach(([l,v],i)=>{
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(180,60,70);doc.text(l,M+5,y+9+i*8);
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,30);doc.text(String(v),M+24,y+9+i*8);
+    });
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(180,60,70);doc.text('QUOTE REF',W-M-40,y+9);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,30);doc.text(finalRef,W-M-40,y+17);
+    y+=40;
+
+    const sec=(title,gold)=>{
+      const c=gold?[201,168,76]:[230,57,70];
+      doc.setFillColor(...c);doc.rect(M,y,W-M*2,8,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(gold?20:255,gold?20:255,gold?20:255);
+      doc.text(title,M+4,y+5.5);return y+11;
+    };
+    const row=(label,sub,value,shade)=>{
+      const rH=sub?14:10;
+      if(shade){doc.setFillColor(249,249,249);doc.rect(M,y,W-M*2,rH,'F');}
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(40,40,40);doc.text(label,M+4,y+6);
+      if(sub){doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(150,150,150);doc.text(sub,M+4,y+11);}
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(30,30,30);doc.text(value,W-M-4,y+6,{align:'right'});
+      doc.setDrawColor(235,235,235);doc.line(M,y+rH,W-M,y+rH);
+      y+=rH+1;
+    };
+
+    y=sec('PRODUCTION COST (ZEAN)'); let sh=false;
+    row('Total Material Cost',filamentData.map(f=>f.label||'Fila').join(', '),fmt(totalMaterial),sh);sh=!sh;
+    row('Machine Electricity',MACHINES[machine].label+' · '+printHrs.toFixed(2)+'h',fmt(machineElec),sh);sh=!sh;
+    row('Workstation Electricity',printHrs.toFixed(2)+'h × R'+WS_RATE.toFixed(2)+'/hr',fmt(wsElec),sh);sh=!sh;
+    if(dryEnabled){row('Dryer [one-time]',(parseFloat(dryH)||0)+'h × R'+DRY_RATE.toFixed(2)+'/hr',fmt(dryerElec),sh);sh=!sh;}
+    row('Nozzle Wear (auto)',WEAR[highestWC].label,fmt(nozzleWear),sh);sh=!sh;
+    row('PEI Wear (auto)',printHrs.toFixed(2)+'h × R'+WEAR[highestWC].pei+'/hr',fmt(peiWear),sh);sh=!sh;
+    if(otherCostVal>0){row('Other Costs','Per unit',fmt(otherCostVal),sh);sh=!sh;}
+    if(bulkEnabled&&qty>1){
+      row('Per-unit × '+qty,'',fmt(perUnitCost*qty),sh);sh=!sh;
+      if(discAmt>0)row('Bulk Discount '+discPct+'%','','-'+fmt(discAmt),sh);
+    }
+    row('TOTAL PRODUCTION COST','Hard costs only — no labour',fmt(displayTotal),false);
+    y+=4;
+
+    y=sec('QUOTE PRICING (TY)',true); sh=false;
+    if(urgentAmt>0){row('Urgent Surcharge (+50%)','Added before markup',fmt(urgentAmt),sh);sh=!sh;}
+    if(urgentAmt>0){row('Production + Urgent','Markup base',fmt(prodBase),sh);sh=!sh;}
+    row('Markup (×'+markup+')',getMuxTier(markup).label,fmt(quotedBase),sh);sh=!sh;
+    if(riskAmt>0){row('Risk Buffer '+riskInfo.buf+'% — Level '+risk+' '+riskInfo.label,'',fmt(riskAmt),sh);sh=!sh;}
+    if(cmCost>0){row('Colour Match [client cost]','Material + electricity',fmt(cmCost),sh);sh=!sh;}
+    y+=4;
+
+    y=sec('LABOUR (TY — NOT MARKED UP)',true); sh=false;
+    if(finLabour>0){row('Post-Processing — '+FINISH[finish].label,FINISH[finish].mins+' min × R180/hr',fmt(finLabour),sh);sh=!sh;}
+    if(cadLabour>0){row('CAD / Design',toHrs(cadH,cadM).toFixed(2)+'h × R'+CAD_RATE+'/hr',fmt(cadLabour),sh);sh=!sh;}
+    if(opsLabour>0){row('Operational / Setup',toHrs(opsH,opsM).toFixed(2)+'h × R'+OPS_RATE+'/hr',fmt(opsLabour),sh);sh=!sh;}
+    if(ctLabour>0){row('Custom Text Prep',toHrs(custTextH,custTextM).toFixed(2)+'h × R'+CAD_RATE+'/hr',fmt(ctLabour),sh);sh=!sh;}
+    if(clLabour>0){row('Logo/Artwork Prep',toHrs(custLogoH,custLogoM).toFixed(2)+'h × R'+CAD_RATE+'/hr',fmt(clLabour),sh);sh=!sh;}
+    if(totalLabour===0)row('No labour entered','',fmt(0),false);
+    if(deliveryVal>0){row('Delivery (pass-through)','',fmt(deliveryVal),sh);}
+    y+=4;
+
+    // Summary box
+    doc.setFillColor(13,13,13);doc.roundedRect(M,y,W-M*2,42,2,2,'F');
+    doc.setFillColor(230,57,70);doc.rect(M,y,2,42,'F');
+    // Col 1
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
+    doc.text('TOTAL PRODUCTION COST',M+7,y+10);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(230,57,70);
+    doc.text(fmt(displayTotal),M+7,y+20);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(70,70,70);
+    doc.text('Hard costs only',M+7,y+27);
+    // Col 2
+    const midX=W/2;
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
+    doc.text('TOTAL BILLED',midX,y+10);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(201,168,76);
+    doc.text(fmt(finalPrice),midX,y+20);
+    if(vatEnabled){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(70,70,70);doc.text('Incl. VAT: '+fmt(totalWithVat),midX,y+27);}
+    // Profit
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
+    doc.text('PROFIT',M+7,y+35);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(profit>=0?76:230,profit>=0?175:57,profit>=0?80:70);
+    doc.text(fmt(profit),M+7,y+44);
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
+    doc.text('MARGIN',midX,y+35);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(profit>=0?76:230,profit>=0?175:57,profit>=0?80:70);
+    doc.text(marginPct+'%',midX,y+44);
+    y+=50;
+
+    if(quoteNotes.trim()){
+      doc.setFillColor(255,248,235);doc.roundedRect(M,y,W-M*2,22,2,2,'F');
+      doc.setFillColor(201,168,76);doc.rect(M,y,2,22,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(140,100,30);doc.text('NOTES (INTERNAL)',M+5,y+7);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(60,60,60);
+      const nl=doc.splitTextToSize(quoteNotes,W-M*2-12);doc.text(nl,M+5,y+14);
+      y+=Math.max(22,nl.length*5+10)+4;
+    }
+
+    doc.setDrawColor(220,220,220);doc.line(M,y,W-M,y);y+=5;
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(160,160,160);
+    doc.text('Solidus · INTERNAL · '+finalRef+' · '+new Date().toLocaleString(),M,y);
+    doc.text('CONFIDENTIAL — NOT FOR CLIENT DISTRIBUTION',W-M,y,{align:'right'});
+    const sn=(clientName||'client').replace(/[^a-zA-Z0-9]/g,'_');
+    doc.save('Solidus_Internal_'+sn+'_'+(jobDate||'today')+'.pdf');
+  };
+
+  // ── RESET ────────────────────────────────────────────────────────────────────
+  const resetAll = () => {
+    if (!window.confirm('Reset everything? This cannot be undone.')) return;
+    setClientName('');setJobDesc('');setJobDate(new Date().toISOString().slice(0,10));
+    setFilaments([newFilament()]);setMachine('k1c');setPrintH('');setPrintM('');
+    setDryEnabled(false);setDryH('');setOtherCost('');setBulkEnabled(false);setBulkQty('');setBulkDiscount('');
+    setMarkup(2.5);setRisk(1);setUrgent(false);setFinish('cleaned');
+    setCadH('');setCadM('');setOpsH('');setOpsM('');
+    setCustText(false);setCustTextH('');setCustTextM('');
+    setCustLogo(false);setCustLogoH('');setCustLogoM('');
+    setColourMatch(false);setCmSpoolCost('');setCmGrams('');setCmPrintH('');setCmPrintM('');
+    setDelivery('');setVatEnabled(false);setQuoteRef('');setQuoteExpiry(7);setQuoteNotes('');
+  };
+
+  // ── RENDER ───────────────────────────────────────────────────────────────────
+  return (
+    <div id="app">
+
+      {/* HEADER */}
+      <div className="header">
+        <div className="header-brand">
+          <div className="header-logo">SOLIDUS</div>
+          <div className="header-sub">PRODUCTION COST SYSTEM · CODEX REV 3.1</div>
+        </div>
+      </div>
+
+      {/* TABS */}
+      <div className="tabs">
+        <button className={`tab${tab==='cost'?' active':''}`} onClick={()=>setTab('cost')}>Cost</button>
+        <button className={`tab quote-tab${tab==='quote'?' active':''}`} onClick={()=>setTab('quote')}>Quote</button>
+      </div>
+
+      <div className="content">
+
+        {/* ═══════════════════════════════ COST TAB ══════════════════════════ */}
+        <div className={`panel${tab==='cost'?' active':''}`}>
+          <div className="section">
+
+            {/* JOB INFO */}
+            <SectionHead label="Job Information" />
+            <Field label="Client Name">
+              <input className="input" value={clientName} onChange={e=>setClientName(e.target.value)} placeholder="e.g. Acme Industries" />
+            </Field>
+            <Field label="Job Description">
+              <input className="input" value={jobDesc} onChange={e=>setJobDesc(e.target.value)} placeholder="e.g. PA6 bracket × 4" />
+            </Field>
+            <Field label="Date">
+              <input className="input" type="date" value={jobDate} onChange={e=>setJobDate(e.target.value)} />
+            </Field>
+
+            {/* MATERIAL */}
+            <SectionHead label="Material — Filaments" />
+            {filaments.map((f,i) => (
+              <div className="filament-card" key={f.id}>
+                <div className="filament-card-header">
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <span className="filament-title">FILAMENT {i+1}</span>
+                    {f.label && <span className="wear-badge">{WEAR[detectWear(f.label)].label}</span>}
+                  </div>
+                  {filaments.length > 1 && <button className="btn-remove" onClick={()=>removeFilament(f.id)}>Remove</button>}
+                </div>
+                <Field label="Material Name" hint="Include CF, GF, ESD, FR in name for auto wear class detection">
+                  <input className="input" value={f.label} onChange={e=>updateFilament(f.id,'label',e.target.value)} placeholder="e.g. PLA Black, CF-PA6, TPU Flex" />
+                </Field>
+                <div className="grid-2">
+                  <Field label="Spool Cost (R)">
+                    <input className="input mono" type="number" inputMode="decimal" value={f.spoolCost} onChange={e=>updateFilament(f.id,'spoolCost',e.target.value)} placeholder="e.g. 350" />
+                  </Field>
+                  <Field label="Spool Weight">
+                    <select className="select mono" value={f.spoolWeight} onChange={e=>updateFilament(f.id,'spoolWeight',e.target.value)}>
+                      <option value={250}>250g</option>
+                      <option value={500}>500g</option>
+                      <option value={750}>750g</option>
+                      <option value={1000}>1000g</option>
+                      <option value={2000}>2000g</option>
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Grams Used" hint="From slicer — per unit">
+                  <input className="input mono" type="number" inputMode="decimal" value={f.grams} onChange={e=>updateFilament(f.id,'grams',e.target.value)} placeholder="e.g. 45" />
+                </Field>
+                {(f.spoolCost && f.grams) && (
+                  <div className="filament-cost-row">
+                    <span>{fmt(filamentData[i]?.cost||0)}</span>
+                    <span style={{color:'var(--text3)',marginLeft:8}}>@ R{filamentData[i]?.cpg.toFixed(4)}/g</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            <button className="btn-add" onClick={addFilament}>+ Add Filament</button>
+
+            {/* MACHINE */}
+            <SectionHead label="Machine & Print Time" />
+            <Field label="Machine">
+              <select className="select" value={machine} onChange={e=>setMachine(e.target.value)}>
+                {Object.entries(MACHINES).map(([k,v])=>(
+                  <option key={k} value={k}>{v.label} — R{v.rate.toFixed(2)}/hr</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Print Time — Per Unit">
+              <HM hVal={printH} hSet={setPrintH} mVal={printM} mSet={setPrintM} />
+            </Field>
+
+            {/* DRYING */}
+            <SectionHead label="Drying — SpacePi X4" />
+            <label className="check-row">
+              <input type="checkbox" className="check-box" checked={dryEnabled} onChange={e=>setDryEnabled(e.target.checked)} />
+              <div>
+                Drying required — R{DRY_RATE.toFixed(2)}/hr
+                <div className="check-sub">ONE-TIME PER BATCH · NEVER MULTIPLIED IN BULK</div>
+              </div>
+            </label>
+            {dryEnabled && (
+              <Field label="Drying Duration (hours)" hint="PA6 = 8–12h · PETG = 4–6h · ASA = 4–6h">
+                <input className="input mono" type="number" inputMode="decimal" value={dryH} onChange={e=>setDryH(e.target.value)} placeholder="e.g. 8" />
+              </Field>
+            )}
+
+            {/* OTHER COSTS */}
+            <SectionHead label="Other Costs" />
+            <Field label="Other Costs (R)" hint="Packaging, hardware, inserts — per unit">
+              <input className="input mono" type="number" inputMode="decimal" value={otherCost} onChange={e=>setOtherCost(e.target.value)} placeholder="0.00" />
+            </Field>
+
+            {/* BULK */}
+            <SectionHead label="Bulk Order" />
+            <label className="check-row">
+              <input type="checkbox" className="check-box" checked={bulkEnabled} onChange={e=>setBulkEnabled(e.target.checked)} />
+              This is a bulk / repeat order
+            </label>
+            {bulkEnabled && (
+              <div className="filament-card">
+                <Field label="Quantity (units)">
+                  <input className="input mono" type="number" inputMode="numeric" value={bulkQty} onChange={e=>{setBulkQty(e.target.value);setBulkDiscount('');}} placeholder="e.g. 50" min="1" />
+                </Field>
+                {qty > 1 && (
+                  <>
+                    <div className="field-label" style={{marginBottom:8}}>Suggested Discount Tiers</div>
+                    <div className="bulk-tiers">
+                      {BULK_TIERS.map(t=>{
+                        const active = qty>=t.min&&qty<=t.max;
+                        return (
+                          <div key={t.min} className={`bulk-tier-row${active?' active':''}`}>
+                            <span className="bulk-tier-name">{t.label}</span>
+                            <span className="bulk-tier-pct">{t.pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <Field label="Discount % Override" hint={`Suggested: ${suggestTier(qty).pct}% · Leave blank to use suggestion`}>
+                      <input className="input mono" type="number" inputMode="decimal" value={bulkDiscount} onChange={e=>setBulkDiscount(e.target.value)} placeholder={`${suggestTier(qty).pct} (suggested)`} min="0" max="100" />
+                    </Field>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* COST BREAKDOWN */}
+            <SectionHead label="Production Cost Breakdown" />
+            <div className="cost-summary">
+              <div className="summary-title">Hard Costs — No Labour</div>
+              {filamentData.map((f,i)=>(
+                <SummaryRow key={f.id} label={f.label||`Filament ${i+1}`} sub={f.grams?`${f.grams}g @ R${f.cpg.toFixed(4)}/g · ${WEAR[f.wc].label}`:undefined} value={fmt(f.cost)} />
+              ))}
+              {filaments.length>1 && <SummaryRow label="Total Material" value={fmt(totalMaterial)} />}
+              <SummaryRow label={`Machine — ${MACHINES[machine].label.split('—')[0].trim()}`} sub={`${printHrs.toFixed(2)}h × R${MACHINES[machine].rate.toFixed(2)}/hr`} value={fmt(machineElec)} />
+              <SummaryRow label="Workstation Electricity" sub={`${printHrs.toFixed(2)}h × R${WS_RATE.toFixed(2)}/hr`} value={fmt(wsElec)} />
+              {dryEnabled && <SummaryRow label="Dryer Electricity" sub={`${parseFloat(dryH)||0}h · one-time per batch`} value={fmt(dryerElec)} />}
+              <SummaryRow label="Nozzle Wear" sub={`Auto · ${filamentData.map(f=>WEAR[f.wc].label).join(', ')}`} value={fmt(nozzleWear)} />
+              <SummaryRow label="PEI Plate Wear" sub={`${printHrs.toFixed(2)}h × R${WEAR[highestWC].pei}/hr`} value={fmt(peiWear)} />
+              {otherCostVal>0 && <SummaryRow label="Other Costs" value={fmt(otherCostVal)} />}
+              {bulkEnabled&&qty>1 && (
+                <>
+                  <SummaryRow label={`Per-unit × ${qty} units`} value={fmt(perUnitCost*qty)} />
+                  {oneTimeCost>0 && <SummaryRow label="One-Time (drying)" value={fmt(oneTimeCost)} />}
+                  {discAmt>0 && <SummaryRow label={`Bulk Discount — ${discPct}%`} value={`-${fmt(discAmt)}`} red />}
+                </>
+              )}
+            </div>
+
+            <div className="total-box">
+              <div className="total-box-row">
+                <div>
+                  <div className="total-box-label">Total Production Cost</div>
+                  <div className="total-box-sublabel">Hard costs only · No labour</div>
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div className="total-box-amount">{fmt(displayTotal)}</div>
+                  {bulkEnabled&&qty>1 && <div className="total-box-per">per unit <span>{fmt(costPerUnit)}</span></div>}
+                </div>
+              </div>
+            </div>
+
+            {/* PDF OUTPUTS */}
+            <SectionHead label="Export" />
+            <div className="btn-row">
+              <button className="btn btn-red" onClick={()=>loadPDF(genCostSheet)}>↓ Cost Sheet</button>
+            </div>
+            <div style={{color:'var(--text3)',fontSize:10,fontFamily:'var(--mono)',letterSpacing:1,textAlign:'center',marginBottom:24}}>
+              ZEAN'S WORKING DOCUMENT · HARD COSTS ONLY
+            </div>
+
+            {/* DOCS */}
+            <SectionHead label="Solidus Documents" />
+            <div className="docs-row">
+              <a className="doc-link" href="/Solidus_Manufacturing_TCs.pdf" download>↓ T&Cs</a>
+              <a className="doc-link" href="/Solidus_Client_Intake_Form.pdf" download>↓ Intake Form</a>
+            </div>
+
+            <div className="divider" />
+            <button className="btn-reset" onClick={resetAll}>Reset All Fields</button>
+            <div style={{height:24}} />
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════ QUOTE TAB ═════════════════════════ */}
+        <div className={`panel${tab==='quote'?' active':''}`}>
+          <div className="section">
+
+            {/* PRODUCTION COST CARRY-OVER */}
+            <SectionHead label="Production Cost" gold />
+            <div className="info-box gold">
+              <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:1.5,color:'var(--gold)',marginBottom:6}}>FROM COST TAB</div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{fontSize:13,color:'var(--text2)'}}>
+                  {clientName || '—'} {jobDesc ? `· ${jobDesc}` : ''}<br/>
+                  <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text3)'}}>
+                    {bulkEnabled&&qty>1 ? `${qty} units` : 'Single unit'}
+                    {filaments[0]?.label ? ` · ${filaments[0].label}` : ''}
+                  </span>
+                </div>
+                <div style={{fontFamily:'var(--mono)',fontSize:24,fontWeight:700,color:'var(--red)'}}>{fmt(displayTotal)}</div>
+              </div>
+            </div>
+
+            {/* MARKUP */}
+            <SectionHead label="Markup Multiplier" gold />
+            <div className="markup-grid">
+              {MARKUP_OPTS.map(m=>(
+                <button key={m} className={`markup-btn${markup===m?' active':''}`} onClick={()=>setMarkup(m)}>{m.toFixed(1)}</button>
+              ))}
+            </div>
+            <div className="tier-labels">
+              {MARKUP_TIERS.map(t=>(
+                <div key={t.label} className={`tier-label${getMuxTier(markup).label===t.label?' active':''}`}>{t.label}</div>
+              ))}
+            </div>
+
+            {/* RISK */}
+            <SectionHead label="Risk Level" gold />
+            <div className="risk-grid">
+              {RISK_LEVELS.map(r=>(
+                <button key={r.level} className={`risk-btn${risk===r.level?' active':''}`} onClick={()=>setRisk(r.level)}>
+                  <div className="risk-btn-num">{r.level}</div>
+                  <div className="risk-btn-label">{r.label}</div>
+                </button>
+              ))}
+            </div>
+            <div className="risk-info">
+              <div className="risk-info-title">COMPLEXITY</div>
+              <div className="risk-info-text">{riskInfo.desc}</div>
+              <div className="risk-info-title">STRATEGY</div>
+              <div className="risk-info-text">{riskInfo.strat}</div>
+              <div className="risk-info-title">BUFFER APPLIED</div>
+              <div className="risk-info-buffer">{riskInfo.buf}%</div>
+            </div>
+
+            {/* URGENT */}
+            <SectionHead label="Urgent Surcharge" gold />
+            <label className="check-row">
+              <input type="checkbox" className="check-box gold" checked={urgent} onChange={e=>setUrgent(e.target.checked)} />
+              <div>
+                P1 Urgent — +50% on production cost
+                {urgent && <span style={{fontFamily:'var(--mono)',color:'var(--gold)',marginLeft:8}}>{fmt(urgentAmt)}</span>}
+                <div className="check-sub">APPLIED BEFORE MARKUP SO MARGIN IS EARNED ON PREMIUM</div>
+              </div>
+            </label>
+
+            {/* LABOUR */}
+            <SectionHead label="Your Labour — Not Marked Up" gold />
+            <div className="info-box" style={{marginBottom:16}}>
+              Labour is added after markup at your fixed rate. Markup does not apply to your time.
+            </div>
+
+            <Field label="Surface Finish" hint="Post-processing — R180/hr">
+              <select className="select" value={finish} onChange={e=>setFinish(e.target.value)}>
+                {Object.entries(FINISH).map(([k,v])=>(
+                  <option key={k} value={k}>{v.label} — {v.mins} min {v.mins>0?`(${fmt(v.mins*FIN_RATE)})`:''}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="CAD / Design Time — R150/hr">
+              <HM hVal={cadH} hSet={setCadH} mVal={cadM} mSet={setCadM} gold />
+            </Field>
+            <Field label="Operational / Setup — R180/hr">
+              <HM hVal={opsH} hSet={setOpsH} mVal={opsM} mSet={setOpsM} gold />
+            </Field>
+
+            {/* CUSTOMISATION */}
+            <SectionHead label="Customisation" gold />
+            <label className="check-row">
+              <input type="checkbox" className="check-box gold" checked={custText} onChange={e=>setCustText(e.target.checked)} />
+              Custom text / names / numbers
+            </label>
+            {custText && (
+              <div className="custom-sub">
+                <Field label="CAD Prep Time — R150/hr">
+                  <HM hVal={custTextH} hSet={setCustTextH} mVal={custTextM} mSet={setCustTextM} gold />
+                </Field>
+              </div>
+            )}
+
+            <label className="check-row">
+              <input type="checkbox" className="check-box gold" checked={custLogo} onChange={e=>setCustLogo(e.target.checked)} />
+              Logo or artwork embedded
+            </label>
+            {custLogo && (
+              <div className="custom-sub">
+                <Field label="File Prep Time — R150/hr">
+                  <HM hVal={custLogoH} hSet={setCustLogoH} mVal={custLogoM} mSet={setCustLogoM} gold />
+                </Field>
+              </div>
+            )}
+
+            <label className="check-row">
+              <input type="checkbox" className="check-box gold" checked={colourMatch} onChange={e=>setColourMatch(e.target.checked)} />
+              <div>
+                Colour matching — test print required
+                <div className="check-sub">HARD COST · PASSED THROUGH TO CLIENT</div>
+              </div>
+            </label>
+            {colourMatch && (
+              <div className="custom-sub">
+                <div className="grid-2">
+                  <Field label="Test Spool Cost (R)">
+                    <input className="input mono" type="number" inputMode="decimal" value={cmSpoolCost} onChange={e=>setCmSpoolCost(e.target.value)} placeholder="e.g. 350" />
+                  </Field>
+                  <Field label="Spool Weight">
+                    <select className="select mono" value={cmSpoolWt} onChange={e=>setCmSpoolWt(e.target.value)}>
+                      <option value={250}>250g</option>
+                      <option value={500}>500g</option>
+                      <option value={750}>750g</option>
+                      <option value={1000}>1000g</option>
+                      <option value={2000}>2000g</option>
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Test Print Grams">
+                  <input className="input mono" type="number" inputMode="decimal" value={cmGrams} onChange={e=>setCmGrams(e.target.value)} placeholder="e.g. 12" />
+                </Field>
+                <Field label="Test Print Time">
+                  <HM hVal={cmPrintH} hSet={setCmPrintH} mVal={cmPrintM} mSet={setCmPrintM} gold />
+                </Field>
+                {cmCost>0 && <div style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--gold)',textAlign:'right'}}>Test cost: {fmt(cmCost)}</div>}
+              </div>
+            )}
+
+            {/* DELIVERY */}
+            <SectionHead label="Delivery" gold />
+            <Field label="Delivery Cost (R)" hint="Pass-through · not marked up">
+              <input className="input mono" type="number" inputMode="decimal" value={delivery} onChange={e=>setDelivery(e.target.value)} placeholder="0.00" />
+            </Field>
+
+            {/* VAT */}
+            <SectionHead label="VAT" gold />
+            <div className="vat-row">
+              <div>
+                <div className="vat-label">Include VAT (15%)</div>
+                <div className="vat-sub">{vatEnabled ? `VAT: ${fmt(vatAmt)} · Total: ${fmt(totalWithVat)}` : 'Not applied'}</div>
+              </div>
+              <label className="toggle">
+                <input type="checkbox" checked={vatEnabled} onChange={e=>setVatEnabled(e.target.checked)} />
+                <span className="toggle-slider"></span>
+              </label>
+            </div>
+
+            {/* QUOTE DETAILS */}
+            <SectionHead label="Quote Details" gold />
+            <Field label="Quote Reference" hint="Leave blank to auto-generate">
+              <input className="input mono" value={quoteRef} onChange={e=>setQuoteRef(e.target.value)} placeholder={`Auto: ${autoRef}`} />
+            </Field>
+            <Field label="Valid For">
+              <select className="select" value={quoteExpiry} onChange={e=>setQuoteExpiry(parseInt(e.target.value))}>
+                <option value={3}>3 days</option>
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+              </select>
+            </Field>
+            <Field label="Internal Notes">
+              <textarea className="textarea" value={quoteNotes} onChange={e=>setQuoteNotes(e.target.value)} placeholder="Notes for internal use only — not shown to client..." />
+            </Field>
+
+            {/* QUOTE BREAKDOWN */}
+            <SectionHead label="Quote Breakdown" gold />
+            <div className="cost-summary gold-top">
+              <div className="summary-title gold">Pricing Calculation</div>
+              <SummaryRow label="Production Cost" sub={bulkEnabled&&qty>1?`${qty} units`:'Single unit'} value={fmt(displayTotal)} />
+              {urgentAmt>0 && <SummaryRow label="Urgent Surcharge +50%" value={fmt(urgentAmt)} />}
+              {urgentAmt>0 && <SummaryRow label="Production + Urgent" sub="Markup base" value={fmt(prodBase)} />}
+              <SummaryRow label={`Markup ×${markup}`} sub={getMuxTier(markup).label} value={fmt(quotedBase)} gold />
+              {riskAmt>0 && <SummaryRow label={`Risk Buffer ${riskInfo.buf}% — Level ${risk} ${riskInfo.label}`} value={fmt(riskAmt)} />}
+              {cmCost>0 && <SummaryRow label="Colour Match (client cost)" value={fmt(cmCost)} />}
+              {finLabour>0 && <SummaryRow label={`Finishing — ${FINISH[finish].label}`} sub={`${FINISH[finish].mins} min × R180/hr`} value={fmt(finLabour)} gold />}
+              {cadLabour>0 && <SummaryRow label="CAD / Design" sub={`${toHrs(cadH,cadM).toFixed(2)}h × R${CAD_RATE}/hr`} value={fmt(cadLabour)} gold />}
+              {opsLabour>0 && <SummaryRow label="Operational / Setup" sub={`${toHrs(opsH,opsM).toFixed(2)}h × R${OPS_RATE}/hr`} value={fmt(opsLabour)} gold />}
+              {ctLabour>0 && <SummaryRow label="Custom Text Prep" value={fmt(ctLabour)} gold />}
+              {clLabour>0 && <SummaryRow label="Logo/Artwork Prep" value={fmt(clLabour)} gold />}
+              {deliveryVal>0 && <SummaryRow label="Delivery" sub="Pass-through" value={fmt(deliveryVal)} />}
+              {vatEnabled && <SummaryRow label="VAT 15%" value={fmt(vatAmt)} dim />}
+            </div>
+
+            <div className="total-box gold">
+              <div className="total-box-row">
+                <div>
+                  <div className="total-box-label">{bulkEnabled&&qty>1?`Total Quote — ${qty} Units`:'Total Quote Price'}</div>
+                  {vatEnabled && <div className="total-box-sublabel">Incl. VAT</div>}
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div className="total-box-amount gold">{fmt(vatEnabled?totalWithVat:finalPrice)}</div>
+                  {bulkEnabled&&qty>1 && <div className="total-box-per">per unit <span>{fmt(vatEnabled?totalWithVat/qty:pricePerUnit)}</span></div>}
+                </div>
+              </div>
+            </div>
+
+            {/* PROFIT */}
+            <div className="profit-card">
+              <div>
+                <div className="profit-label">Estimated Profit</div>
+                <div className="profit-sub">Billed minus production minus labour</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div className="profit-amount" style={{color:profit>=0?'var(--green)':'var(--red)'}}>{fmt(profit)}</div>
+                <div className="profit-margin">{displayTotal>0?marginPct+'% on hard costs':'—'}</div>
+              </div>
+            </div>
+
+            {/* EXPORT */}
+            <SectionHead label="Export" gold />
+            <div className="btn-row">
+              <button className="btn btn-gold" onClick={()=>loadPDF(genCustomerQuote)}>↓ Customer Quote</button>
+              <button className="btn btn-dark" onClick={()=>loadPDF(genInternalQuote)}>↓ Internal Quote</button>
+            </div>
+            <div style={{color:'var(--text3)',fontSize:10,fontFamily:'var(--mono)',letterSpacing:1,textAlign:'center',marginBottom:16}}>
+              CUSTOMER — PRICE ONLY · INTERNAL — FULL WORKINGS
+            </div>
+
+            <div className="divider" />
+            <button className="btn-reset" onClick={resetAll}>Reset All Fields</button>
+            <div style={{height:24}} />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
